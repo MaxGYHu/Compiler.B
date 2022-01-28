@@ -1,0 +1,81 @@
+def heuristic_game_value(self, state):
+        x = self.game_value(state)
+        #modify x
+        if  x== -1 or x == 1:
+            return x
+        else:
+            #store the value of ex of black 
+            #and ex of red
+            case = []
+            #
+            for row in state:
+                for i in range(2):
+                    segment = row[i:i+4]
+                    if segment.count('r') >0 or segment.count('b') >0:
+                        case.append(segment)
+                       
+           # print("ex_b", ex_b)
+            #print("ex_r", ex_r)        
+            #ver
+            col_val= 0
+            while col_val <4:
+                column = []
+                for row in range(5):
+                    column.append(state[row][col_val])
+                col_val += 1
+                for i in range(2):
+                    segment = column[i:i+4]
+                    if segment.count('r') >0 or segment.count('b') >0:
+                        case.append(segment)
+               
+           
+            #\diagonal
+            for x in range(2):
+                for y in range(2):
+                    segment = []
+                    segment.append(state[x][y])
+                    segment.append(state[x+1][y+1])
+                    segment.append(state[x+2][y+2])
+                    segment.append(state[x+3][y+3])
+                    if segment.count('r') >0 or segment.count('b') >0:
+                        case.append(segment)
+           
+           
+            #/diagonal
+            for x in range(2):
+                for y in range(3,5):
+                    segment = []
+                    segment.append(state[x][y])
+                    segment.append(state[x+1][y-1])
+                    segment.append(state[x+2][y-2])
+                    segment.append(state[x+3][y-3])
+                    if segment.count('r') >0 or segment.count('b') >0:
+                        case.append(segment)
+            #square
+
+            for x in range(3):
+                for y in range(3):
+                    segment = []
+                    segment.append(state[x][y])
+                    segment.append(state[x][y+2])
+                    segment.append(state[x+2][y])
+                    segment.append(state[x+2][y+2])
+                    if segment.count('r') >0 or segment.count('b') >0:
+                        case.append(segment)
+           
+            ex = 0
+            for i in case:
+                if i.count(self.my_piece) == 3 and i.count(' ') == 1:
+                    ex += 0.75
+                if i.count(self.my_piece) == 2 and i.count(' ') == 2:
+                    ex += 0.5
+                if i.count(self.my_piece) == 1 and i.count(' ') == 3:
+                    ex += 0.25
+                if i.count(self.opp) == 3 and i.count(' ') == 1:
+                    ex -= 0.75
+                if i.count(self.opp) == 2 and i.count(' ') == 2:
+                    ex -= 0.5
+                if i.count(self.opp) == 1 and i.count(' ') == 3:
+                    ex -= 0.25
+            ex = ex/len(case)
+            return ex
