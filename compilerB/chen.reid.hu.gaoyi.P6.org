@@ -1,0 +1,4 @@
+#+TITLE: P6
+#+AUTHOR: Reid Chen, Gaoyi Hu
+
+This is p6.

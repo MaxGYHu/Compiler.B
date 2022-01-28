@@ -1,0 +1,168 @@
+% Created 2021-12-14 Tue 15:22
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\author{Reid Chen, Gaoyi Hu}
+\date{\today}
+\title{P6}
+\hypersetup{
+ pdfauthor={Reid Chen, Gaoyi Hu},
+ pdftitle={P6},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 26.3 (Org mode 9.1.9)}, 
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+So, firstly we will have to implement the feature to assert if there is a main function by lookup the global function name.
+Then, we set the offset when set the function statement. Next, we add code to MIPS when the code generates the function, global variables and some other cases to executre the exact codes in assembly code scope. 
+Typically, for function, we need to substract the offset space to the sp, and for each line, we exectute it in a single stack. 
+And for each global variable, we simply add them to the base of the stack. 
+\section{Code Generation for Global Variable Declarations}
+\label{sec:org876c3f2}
+Let \texttt{N} denote the size of the global variable in bytes. For each global variable \texttt{\_v}, we
+generate the following code snippet:
+\begin{verbatim}
+    .data     # in static data area
+    .align 2  # align on a word boundary
+_v: .space N  # label N bytes area with name _v
+\end{verbatim}
+\section{Code Generation for Functions}
+\label{sec:orgd4d74ae}
+Need to generate the following 4 parts in order:
+\begin{enumerate}
+\item preamble
+\item entry
+\item body
+\item exit
+\end{enumerate}
+\subsection{Generating Function Preamble}
+\label{sec:org2d38076}
+For the \texttt{main} function,
+\begin{verbatim}
+    .text
+    .globl main
+main:
+\end{verbatim}
+For all other functions,
+\begin{verbatim}
+.text
+_<functionName>:
+\end{verbatim}
+where \texttt{<functionName>} is a placeholder for the function called \texttt{functinoName}.
+The \texttt{.text} indicates the assembler that the instructions below should be stored in the text area.
+\subsection{Generating Function Entry}
+\label{sec:org9efbf5d}
+We do not need to worry about the actual parameters because the caller of this function has
+already pushed them on the stack.
+We need to do the following 4 things in order:
+\begin{enumerate}
+\item push the return address
+\begin{verbatim}
+sw   $ra, 0($sp)
+subu $sp, $sp, 4
+\end{verbatim}
+\item push the control link
+\begin{verbatim}
+sw   $fp, 0($sp)
+subu $sp, $sp, 4
+\end{verbatim}
+\item set the \texttt{\$fp}
+\begin{verbatim}
+addu $fp, $sp, 8
+\end{verbatim}
+\item push space for local variables
+\begin{verbatim}
+subu $sp, $sp, <size of locals in bytes>
+\end{verbatim}
+where \texttt{size of locals in bytes} can be calculated during semantic analysis.
+\end{enumerate}
+\subsection{Generating Function Body}
+\label{sec:orge0698c1}
+No need to generate code for declarations, but need to generate code for each statement.
+\subsubsection{Write Statement}
+\label{sec:org14269ac}
+\begin{enumerate}
+\item Call the \texttt{codeGen} of the expressions in the write statement so that the value to be written
+will be placed on the top of the stack.
+\begin{verbatim}
+myExp.codeGen();
+\end{verbatim}
+\item Generate code that pop the value one the top of the stack into \texttt{\$a0}
+\begin{verbatim}
+genPop(a0, 4);
+\end{verbatim}
+\item Set \texttt{\$v0} to 1
+\begin{verbatim}
+generate("li", v0, 1);
+\end{verbatim}
+\item Make a system call
+\begin{verbatim}
+generate("syscall");
+\end{verbatim}
+\end{enumerate}
+\subsubsection{If-Then Statement}
+\label{sec:orgb411b1c}
+\begin{enumerate}
+\item Evaluate the condition
+\item Pop the top-of-stack value into register \texttt{\$t0}
+\item Jump to \texttt{FalseLabel} if \texttt{\$t0} is \texttt{FALSE}
+\item Code for the statement list
+\item \texttt{FalseLabel:}
+\end{enumerate}
+\subsubsection{If-Then-Else Statement}
+\label{sec:org31f0dd5}
+\begin{enumerate}
+\item Evaluate the condition
+\item Pop the top-of-stack value into register \texttt{\$t0}
+\item Jump to \texttt{FalseLabel} if \texttt{\$t0} is \texttt{FALSE}
+\item Code for the then-statement list
+\item Jump to \texttt{Exit}
+\item \texttt{FalseLabel:}
+\item \texttt{Exit:}
+\end{enumerate}
+\subsubsection{While Statement}
+\label{sec:orgefe0aff}
+\begin{enumerate}
+\item \texttt{Start:}
+\item Evaluate the condition
+\item Pop the top-of-stack value into register \texttt{\$t0}
+\item Jump to \texttt{FalseLabel} if \texttt{\$0} is \texttt{FALSE}
+\item Code for the statement list
+\item \texttt{Start}
+\item \texttt{FalseLabel:}
+\end{enumerate}
+\subsubsection{Identifier}
+\label{sec:orgd02d271}
+\subsection{Generating Function Exit}
+\label{sec:orgf663793}
+Want to pop off this function's AR. Then jump to the address that stored in the return address
+field of this function's AR. Popping off this function's AR means to restore the \texttt{\$sp} and \texttt{\$fp}
+to its caller' values. However, instead of simply setting \texttt{\$sp} to \texttt{\$fp}, we want to store \texttt{\$fp}
+to a temporary register. Then restore \texttt{\$fp} using the value stored in the control link
+field. Lastly, we restore \texttt{\$sp} using the value stored in that temporary register. We restore
+\texttt{\$sp} because a system interrupt may happen and use the stack. If we restore \texttt{\$sp} at the
+beginning, the system interrupt may overwrite data we need.
+\begin{verbatim}
+lw   $ra, 0($fp)
+move $t0, $fp
+lw   $fp, -4($fp) 
+move $sp, $t0 
+jr   $ra
+\end{verbatim}
+\end{document}

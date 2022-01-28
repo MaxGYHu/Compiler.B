@@ -1,0 +1,16 @@
+3 2 0 1 test logic
+0 0 1 0 1
+1
+test controflow
+should be print
+should be print
+should be print
+test controflow - string
+1hhhhhhh
+1
+should be print
+3 2 1 test relational
+1
+test functions (recursion, call/ret)
+base case!
+1020
