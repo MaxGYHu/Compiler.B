@@ -1,0 +1,76 @@
+
+#include <stdio.h>
+#include "udp.h"
+#include "mfs.c"
+
+
+//#define BUFFER_SIZE (1000)
+
+// client code
+int main(int argc, char *argv[]) {
+    int a = MFS_Init("localhost", 30001);
+    printf("%d\n",a);
+    int flag = 1;
+    if(argc > 1){
+	    flag = atoi(argv[1]);
+    } else{
+    	flag = 0;
+    }
+    int temp = 0;
+    printf("flag:%d\n",flag); 
+    char *mess = malloc(4096);
+    switch(flag)
+    {
+
+	case 1:
+		temp = MFS_Lookup(atoi(argv[2]), argv[3]);
+		printf("case 1\n");
+		break;
+        case 2:
+                // temp = MFS_Lookup(atoi(argv[2]), argv[3]);
+                // printf("case 1\n");
+                break;
+        case 3:
+                temp = MFS_Write(1,"block", 10);
+                printf("case 3\n");
+                break;
+        case 4:
+                temp = MFS_Read(atoi(argv[2]), mess, atoi(argv[3]));
+                printf("case 4\n");
+                break;
+        case 5:
+                temp = MFS_Creat(atoi(argv[2]), atoi(argv[3]), argv[4]);
+                printf("case 5\n");
+                break;
+        case 6:
+                // temp = MFS_Unlink(atoi(argv[2]), argv[3]);
+                printf("case 6\n");
+                break;
+	case 7:
+		printf("yes");
+		fflush(NULL);
+		temp = MFS_Shutdown();
+		printf("case 7\n");
+		break;
+	}
+printf("temp:%d\n",temp);
+return 0;
+    // int sd = UDP_Open(64000);
+    // int rc = UDP_FillSockAddr(&addrSnd, "localhost", 10000);
+
+    // char message[BUFFER_SIZE];
+   /*sprintf(message, "hello world");
+
+    printf("client:: send message [%s]\n", message);
+    rc = UDP_Write(sd, &addrSnd, message, BUFFER_SIZE);
+    if (rc < 0) {
+	printf("client:: failed to send\n");
+	exit(1);
+    }
+
+    printf("client:: wait for reply...\n");
+    rc = UDP_Read(sd, &addrRcv, message, BUFFER_SIZE);
+    printf("client:: got reply [size:%d contents:(%s)\n", rc, message);
+    */
+    // return 0;
+}
